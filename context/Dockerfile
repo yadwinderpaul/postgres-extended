@@ -1,4 +1,4 @@
-FROM postgres:9.6
+FROM postgres:10.12
 MAINTAINER Yadwinder Paul Singh <yadwinderpaul@gmail.com>
 
 ENV POSTGIS_MAJOR 2.5
@@ -6,10 +6,15 @@ ENV PGTAP_VERSION v0.95.0
 
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
-    build-essential curl ca-certificates git postgresql-server-dev-$PG_MAJOR \
+    build-essential curl ca-certificates git gnupg
+
+RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+    postgresql-server-dev-$PG_MAJOR \
     postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR \
-    postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR-scripts \
-    postgis=$POSTGIS_MAJOR.* && \
+    postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR-scripts && \
   rm -rf /var/lib/apt/lists/*
 
 RUN curl -LO http://xrl.us/cpanm && \
@@ -21,7 +26,7 @@ RUN git clone git://github.com/theory/pgtap.git && \
   git checkout tags/$PGTAP_VERSION
 
 RUN mkdir -p /usr/share/doc/postgresql-doc-$PG_MAJOR
-RUN mkdir -p /usr/share/postgresql/9.6/extension
+RUN mkdir -p /usr/share/postgresql/10.12/extension
 RUN chown postgres:postgres -R /pgtap
 RUN chown postgres:postgres -R /usr/share/doc/postgresql-doc-$PG_MAJOR
 RUN chown postgres:postgres -R /usr/share/postgresql

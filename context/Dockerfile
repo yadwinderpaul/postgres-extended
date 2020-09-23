@@ -1,8 +1,8 @@
-FROM postgres:10.12
+FROM postgres:12.2
 MAINTAINER Yadwinder Paul Singh <yadwinderpaul@gmail.com>
 
 ENV POSTGIS_MAJOR 2.5
-ENV PGTAP_VERSION v0.95.0
+ENV PGTAP_VERSION v1.1.0
 
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
@@ -17,6 +17,8 @@ RUN apt-get update && \
     postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR-scripts && \
   rm -rf /var/lib/apt/lists/*
 
+
+# install pgtap
 RUN curl -LO http://xrl.us/cpanm && \
   chmod +x cpanm && \
   ./cpanm TAP::Parser::SourceHandler::pgTAP
@@ -26,10 +28,16 @@ RUN git clone git://github.com/theory/pgtap.git && \
   git checkout tags/$PGTAP_VERSION
 
 RUN mkdir -p /usr/share/doc/postgresql-doc-$PG_MAJOR
-RUN mkdir -p /usr/share/postgresql/10.12/extension
+RUN mkdir -p /usr/share/postgresql/$PG_MAJOR/extension
 RUN chown postgres:postgres -R /pgtap
 RUN chown postgres:postgres -R /usr/share/doc/postgresql-doc-$PG_MAJOR
 RUN chown postgres:postgres -R /usr/share/postgresql
+
+WORKDIR "/pgtap"
+RUN make
+RUN make install
+WORKDIR "/"
+
 
 # install locales
 RUN apt-get install --reinstall -y locales
@@ -38,6 +46,3 @@ RUN sed -i 's/# sv_SE.UTF-8 UTF-8/sv_SE.UTF-8 UTF-8/' /etc/locale.gen
 RUN sed -i 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen
 RUN sed -i 's/# nl_NL.UTF-8 UTF-8/nl_NL.UTF-8 UTF-8/' /etc/locale.gen
 RUN locale-gen en_US.UTF-8 sv_SE.UTF-8 fr_FR.UTF-8 nl_NL.UTF-8
-
-RUN mkdir -p /docker-entrypoint-initdb.d
-COPY ./initdb-pgtap.sh /docker-entrypoint-initdb.d/pgtap.sh
